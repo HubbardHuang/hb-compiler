@@ -1,0 +1,15 @@
+#include  <stdio.h>
+
+// 12345678
+
+int
+main(void) {
+    char c = '\\';  // 12345678
+    int year = 2019 + 1 / 2;
+    printf/* xixi */("I wish you a \"hahahah\" happy %d.\n", year);
+    return 0;
+}
+
+/*
+     enen
+*/
