@@ -1,0 +1,20 @@
+auto	break	case	char	const	continue	default	do
+double	else	enum	extern	float	for	        goto	volatile
+int	    long	static	return	short	signed	    sizeof	register
+struct	switch	typedef	union	void    unsigned	if  	while
+
+#include
+
+sizeof
+<<= >>=
+++  --  !=  ->  /=
+<<  >>  <=  >=  ==
+&&  ||  +=  -=  *=
+%=  &=  ^=  |=
+
+.   +   -   !   ~   *
+&   *   /   %   +   -
+<   >   &   ^   |   ?
+:   =   ,   ;
+
+( ) [ ] { }
