@@ -1,7 +1,7 @@
 CPP_SOURCES = $(shell find . -name "*.cpp")
 CPP_OBJECTS = $(patsubst %.cpp, %.o, $(CPP_SOURCES))
 CC = g++
-INCLUDE_PATH = -I .
+INCLUDE_PATH = -I . -I other
 CPP_FLAGS = $(INCLUDE_PATH)
 EXE = la.exe
 
@@ -25,5 +25,5 @@ run:
 
 .PHONY:remove
 remove:
-	@rm -R -f *.o *.gch
+	@rm -r -f *.o *.gch
 	@echo All redundant files has been deleted.

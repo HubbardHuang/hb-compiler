@@ -56,6 +56,7 @@ struct Token {
     size_t column;
     size_t length;
     std::string name;
+    std::string type;
 };
 
 }; // namespace hcc

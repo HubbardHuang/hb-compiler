@@ -1,19 +1,15 @@
-#include "lexical_analyzer.h"
 #include <cstdio>
 #include <iostream>
 
-struct FileDeleter {
-    void operator()(std::fstream* fp) {
-        fp->close();
-        delete[] fp;
-    }
-};
+#include "file_deleter.h"
+#include "lexical_analyzer.h"
 
 int
 main(void) {
-    std::shared_ptr<std::fstream> file(
-      new std::fstream("test/hello.c.test", std::fstream::in | std::fstream::out));
+    std::unique_ptr<std::fstream, hcc::FileDeleter> file(
+      new std::fstream("test/hello.c.test",
+                       std::fstream::in | std::fstream::out),
+      hcc::FileDeleter());
     hcc::LexicalAnalyzer::Instance().Work(file);
-    file->close();
     return 0;
 }
