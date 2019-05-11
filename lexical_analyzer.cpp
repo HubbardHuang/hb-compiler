@@ -3,7 +3,6 @@
 #include <functional>
 #include <iostream>
 #include <list>
-#include <regex>
 
 #include "file_deleter.h"
 #include "lexical_analyzer.h"
@@ -12,9 +11,13 @@ namespace hcc {
 
 LexicalAnalyzer::~LexicalAnalyzer() {}
 
-LexicalAnalyzer::LexicalAnalyzer() {
-    kind.resize(129);
-    std::fill(kind.begin(), kind.end(), kNeedless);
+LexicalAnalyzer::LexicalAnalyzer()
+  : number_pattern("\\d+(.(\\d+))?(E[+-]?(\\d+))?")
+  , id_pattern("[a-zA-Z_][a-zA-Z_0-9]*")
+  , kind(129, kNeedless)
+  , morpheme_type({ "comment", "number", "id", "character", "string" }) {
+    // kind.resize(129);
+    // std::fill(kind.begin(), kind.end(), kNeedless);
 
     // Classify text characters with array "kind"
     std::string space = " \t\r\n\v\f";
@@ -50,13 +53,6 @@ LexicalAnalyzer::LexicalAnalyzer() {
         if (isalpha(i.first.front())) {
             continue;
         }
-        // switch (i.first.size()) {
-        // case 2:
-        //     is_two_character_operator.insert({ i.first, true });
-        //     break;
-        // default:
-        //     break;
-        // }
         if (i.first.size() == 2) {
             is_two_character_operator.insert({ i.first, true });
         }
@@ -215,37 +211,41 @@ LexicalAnalyzer::Split(
         }
     }
     return result;
-} // namespace hcc
-
-static bool
-MatchHeader(const std::string& s) {
-    if (s.empty()) {
-        return false;
-    }
-    return true;
 }
 
-static bool
-MatchId(const std::string& s) {
-    if (s.empty()) {
+bool
+LexicalAnalyzer::Match(const std::string& type, const std::string& unit) {
+    if (unit.empty()) {
         return false;
     }
-    if (s.front() != '_' && !isalpha(s.front())) {
-        return false;
-    }
-    for (auto ch : s) {
-        if (isalnum(ch) || ch == '_') {
-            continue;
-        } else {
-            return false;
+    auto length = unit.size();
+    if (type == "comment") {
+        if (length >= 2 && unit[0] == '/' && unit[1] == '/') {
+            return true;
+        } else if (length >= 4 && unit[0] == '/' && unit[1] == '*' &&
+                   unit[length - 1] == '/' && unit[length - 2] == '*') {
+            return true;
+        }
+    } else if (type == "id") {
+        bool match = std::regex_match(unit, std::regex(id_pattern));
+        if (match) {
+            return true;
+        }
+    } else if (type == "number") {
+        bool match = std::regex_match(unit, std::regex(number_pattern));
+        if (match) {
+            return true;
+        }
+    } else if (type == "character") {
+        if (length >= 3 && unit.front() == '\'' && unit.back() == '\'') {
+            return true;
+        }
+    } else if (type == "string") {
+        if (length >= 2 && unit.front() == '\"' && unit.back() == '\"') {
+            return true;
         }
     }
-    return true;
-}
-
-static bool
-MatchNumber(const std::string& s) {
-    return std::regex_match(s, std::regex("\\d+(.(\\d+))?(E[+-]?(\\d+))?"));
+    return false;
 }
 
 std::vector<Token>
@@ -253,49 +253,32 @@ LexicalAnalyzer::Classify(std::vector<Token>& source) {
     for (auto& i : source) {
         if (keyword_and_symbol.find(i.name) != keyword_and_symbol.end()) {
             i.type = i.name;
-
-        }
-        // function name, variable name, string, character
-        else if (i.name.front() == '\"' && i.name.back() == '\"') {
-            i.type = "string";
-        } else if (i.name.size() >= 2 &&
-                   (i.name[0] == '/' && i.name[1] == '/' ||
-                    i.name[0] == '/' && i.name[1] == '*')) {
-            i.type = "comment";
-        } else if (i.name.front() == '\'' && i.name.back() == '\'') {
-            i.type = "character";
-        } else if (MatchId(i.name)) {
-            i.type = "id";
-        } else if (MatchNumber(i.name)) {
-            i.type = "num";
         } else {
-            i.type = "ERROR";
-        }
-    }
-    for (int i = 0; i < source.size(); i++) {
-        if (source[i].name == "#include") {
-            for (int left = i, right = i + 1; right < source.size();
-                 left++, right++, i = right) {
-                if (source[left].name == "<" || source[left].name == "\"") {
-                    source[right].type = "header";
+            for (auto type : morpheme_type) {
+                if (Match(type, i.name)) {
+                    i.type = type;
+                    break;
+                } else {
+                    i.type = "OTHER";
                 }
             }
         }
     }
+
     return source;
 }
 
 void
 LexicalAnalyzer::Work(std::unique_ptr<std::fstream, FileDeleter>& source_file) {
     std::vector<Token> first_step_result = Split(source_file);
-    for (auto t : first_step_result) {
-        std::cout << t.name << " " << t.length << "\t(" << t.row << ", "
-                  << t.column << ")" << std::endl;
-    }
-    // std::vector<Token> second_step_result = Classify(first_step_result);
-    // for (auto t : second_step_result) {
-    //     std::cout << "<" << t.name << ", " << t.type << ">" << std::endl;
+    // for (auto t : first_step_result) {
+    //     std::cout << t.name << " " << t.length << "\t(" << t.row << ", "
+    //               << t.column << ")" << std::endl;
     // }
-} // namespace hcc
+    std::vector<Token> second_step_result = Classify(first_step_result);
+    for (auto t : second_step_result) {
+        std::cout << "<" << t.name << ", " << t.type << ">" << std::endl;
+    }
+}
 
 } // namespace hcc
