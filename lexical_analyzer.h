@@ -25,8 +25,11 @@ private:
     std::string id_pattern;
 
     LexicalAnalyzer();
+
     bool IsTwoCharacterOperator(const std::string&);
+    bool MatchId(const std::string& unit);
     bool Match(const std::string& type, const std::string& unit);
+
     std::vector<Token> Split(std::unique_ptr<std::fstream, FileDeleter>&);
     std::vector<Token> Classify(std::vector<Token>&);
 
