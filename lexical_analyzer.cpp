@@ -12,10 +12,10 @@ namespace hcc {
 LexicalAnalyzer::~LexicalAnalyzer() {}
 
 LexicalAnalyzer::LexicalAnalyzer()
-  : number_pattern("\\d+(.(\\d+))?(E[+-]?(\\d+))?")
-  , id_pattern("[a-zA-Z_][a-zA-Z_0-9]*")
-  , kind(129, kNeedless)
-  , morpheme_type({ "comment", "number", "id", "character", "string" }) {
+  : kind(129, kNeedless)
+  , morpheme_type({ "comment", "number", "id", "character", "string" })
+  , number_pattern("\\d+(.(\\d+))?(E[+-]?(\\d+))?")
+  , id_pattern("[a-zA-Z_][a-zA-Z_0-9]*") {
     // kind.resize(129);
     // std::fill(kind.begin(), kind.end(), kNeedless);
 
@@ -57,6 +57,20 @@ LexicalAnalyzer::LexicalAnalyzer()
             is_two_character_operator.insert({ i.first, true });
         }
     }
+
+    // Initialize DFA
+    std::map<char, int> code_of_number_DFA;
+    code_of_number_DFA.insert({ '_', 1 << 0 });
+    for (char ch = 'a'; ch <= 'z'; ch++) {
+        code_of_number_DFA.insert({ ch, 1 << 0 });
+        code_of_number_DFA.insert({ toupper(ch), 1 << 0 });
+    }
+    for (char ch = '0'; ch <= '9'; ch++) {
+        code_of_number_DFA.insert({ ch, 1 << 1 });
+    }
+    id_machine =
+      DFA({ 0, 1 }, { XYZ(0, 1, 1 << 0), XYZ(1, 1, (1 << 0) | (1 << 1)) },
+          code_of_number_DFA);
 }
 
 LexicalAnalyzer&
@@ -227,7 +241,8 @@ LexicalAnalyzer::Match(const std::string& type, const std::string& unit) {
             return true;
         }
     } else if (type == "id") {
-        bool match = std::regex_match(unit, std::regex(id_pattern));
+        // bool match = std::regex_match(unit, std::regex(id_pattern));
+        bool match = id_machine.Judge(unit);
         if (match) {
             return true;
         }

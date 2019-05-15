@@ -2,6 +2,15 @@
 
 namespace hcc {
 
+XYZ::XYZ(int x, int y, int z)
+  : start(x)
+  , end(y)
+  , weight(z) {}
+
+DFA::Road::Road(int n, int w)
+  : neighbor(n)
+  , weight(w) {}
+
 int
 DFA::Go(int curr_vertex, char c) {
     if (graph[curr_vertex].empty()) {
@@ -17,7 +26,8 @@ DFA::Go(int curr_vertex, char c) {
 
 DFA::~DFA() {}
 
-DFA::DFA(const std::vector<XYZ>& triad, const std::map<char, int>& bit_of) {
+DFA::DFA(const std::pair<int, int>& start_and_end,
+         const std::vector<XYZ>& triad, const std::map<char, int>& bit_of) {
     code_of = bit_of;
 
     int vertex_count = 0;
@@ -34,26 +44,28 @@ DFA::DFA(const std::vector<XYZ>& triad, const std::map<char, int>& bit_of) {
         graph[t.start].push_back(Road(t.end, t.weight));
     }
 
-    for (int i = 0; i < graph.size(); i++) {
-        if (graph[i].empty()) {
-            end_vertex = i;
-            break;
-        }
-    }
+    // for (int i = 0; i < graph.size(); i++) {
+    //     if (graph[i].empty()) {
+    //         end_vertex = i;
+    //         break;
+    //     }
+    // }
 
-    const int kTrue = 1;
-    const int kFalse = 0;
-    vector<int> be_neighbor(vertex_count, kFalse);
-    for (auto g : graph) {
-        for (auto v : g) {
-            be_neighbor[v.neighbor] = kTrue;
-        }
-    }
-    for (int i = 0; i < be_neighbor.size(); i++) {
-        if (!be_neighbor[i]) {
-            start_vertex = i;
-        }
-    }
+    // const int kTrue = 1;
+    // const int kFalse = 0;
+    // std::vector<int> be_neighbor(vertex_count, kFalse);
+    // for (auto g : graph) {
+    //     for (auto v : g) {
+    //         be_neighbor[v.neighbor] = kTrue;
+    //     }
+    // }
+    // for (int i = 0; i < be_neighbor.size(); i++) {
+    //     if (!be_neighbor[i]) {
+    //         start_vertex = i;
+    //     }
+    // }
+    start_vertex = start_and_end.first;
+    end_vertex = start_and_end.second;
 }
 
 bool
@@ -66,8 +78,6 @@ DFA::Judge(const std::string& unit) {
         int next_vertex;
         if ((next_vertex = Go(curr_vertex, ch)) != -1) {
             curr_vertex = next_vertex;
-        } else if (curr_vertex == end_vertex) {
-            break;
         } else {
             return false;
         }

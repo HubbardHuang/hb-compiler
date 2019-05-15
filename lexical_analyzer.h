@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "dfa.h"
 #include "token.h"
 
 namespace hcc {
@@ -23,6 +24,7 @@ private:
     std::vector<std::string> morpheme_type;
     std::string number_pattern;
     std::string id_pattern;
+    DFA id_machine;
 
     LexicalAnalyzer();
 

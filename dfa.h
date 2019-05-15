@@ -8,6 +8,7 @@
 namespace hcc {
 
 struct XYZ {
+    XYZ(int x, int y, int z);
     int start;
     int end;
     int weight;
@@ -16,6 +17,7 @@ struct XYZ {
 class DFA {
 private:
     using Road = struct Road {
+        Road(int n, int w);
         int neighbor;
         int weight;
     };
@@ -29,7 +31,9 @@ private:
 
 public:
     ~DFA();
-    DFA(const std::vector<XYZ>&, const std::map<char, int>&);
+    DFA() = default;
+    DFA(const std::pair<int, int>&, const std::vector<XYZ>&,
+        const std::map<char, int>&);
     bool Judge(const std::string&);
 };
 
