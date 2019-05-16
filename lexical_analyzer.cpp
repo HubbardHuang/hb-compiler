@@ -16,8 +16,6 @@ LexicalAnalyzer::LexicalAnalyzer()
   , morpheme_type({ "comment", "number", "id", "character", "string" })
   , number_pattern("\\d+(.(\\d+))?(E[+-]?(\\d+))?")
   , id_pattern("[a-zA-Z_][a-zA-Z_0-9]*") {
-    // kind.resize(129);
-    // std::fill(kind.begin(), kind.end(), kNeedless);
 
     // Classify text characters with array "kind"
     std::string space = " \t\r\n\v\f";
@@ -58,19 +56,44 @@ LexicalAnalyzer::LexicalAnalyzer()
         }
     }
 
-    // Initialize DFA
-    std::map<char, int> code_of_number_DFA;
-    code_of_number_DFA.insert({ '_', 1 << 0 });
+    // Initialize id DFA
+    std::map<char, int> code_of_id_DFA;
+    code_of_id_DFA.insert({ '_', 1 << 0 });
     for (char ch = 'a'; ch <= 'z'; ch++) {
-        code_of_number_DFA.insert({ ch, 1 << 0 });
-        code_of_number_DFA.insert({ toupper(ch), 1 << 0 });
+        code_of_id_DFA.insert({ ch, 1 << 0 });
+        code_of_id_DFA.insert({ toupper(ch), 1 << 0 });
     }
     for (char ch = '0'; ch <= '9'; ch++) {
-        code_of_number_DFA.insert({ ch, 1 << 1 });
+        code_of_id_DFA.insert({ ch, 1 << 1 });
     }
     id_machine =
-      DFA({ 0, 1 }, { XYZ(0, 1, 1 << 0), XYZ(1, 1, (1 << 0) | (1 << 1)) },
-          code_of_number_DFA);
+      DFA({ 0, { 1 } }, { XYZ(0, 1, 1 << 0), XYZ(1, 1, (1 << 0) | (1 << 1)) },
+          code_of_id_DFA);
+
+    // Initialize number DFA
+    std::map<char, int> code_of_number_DFA;
+    code_of_number_DFA.insert({ '.', 1 << 0 });
+    code_of_number_DFA.insert({ 'E', 1 << 1 });
+    code_of_number_DFA.insert({ 'e', 1 << 1 });
+    code_of_number_DFA.insert({ '+', 1 << 2 });
+    code_of_number_DFA.insert({ '-', 1 << 3 });
+    for (char ch = '0'; ch <= '9'; ch++) {
+        code_of_number_DFA.insert({ ch, 1 << 4 });
+    }
+    std::vector<XYZ> xyz_buffer;
+    xyz_buffer.push_back(XYZ(0, 1, 1 << 4));
+    xyz_buffer.push_back(XYZ(1, 1, 1 << 4));
+    xyz_buffer.push_back(XYZ(1, 2, 1 << 0));
+    xyz_buffer.push_back(XYZ(2, 4, 1 << 4));
+    xyz_buffer.push_back(XYZ(4, 4, 1 << 4));
+    xyz_buffer.push_back(XYZ(4, 3, 1 << 1));
+    xyz_buffer.push_back(XYZ(1, 3, 1 << 1));
+    xyz_buffer.push_back(XYZ(3, 6, 1 << 2));
+    xyz_buffer.push_back(XYZ(3, 6, 1 << 3));
+    xyz_buffer.push_back(XYZ(3, 5, 1 << 4));
+    xyz_buffer.push_back(XYZ(6, 5, 1 << 4));
+    xyz_buffer.push_back(XYZ(5, 5, 1 << 4));
+    number_machine = DFA({ 0, { 1, 4, 5 } }, xyz_buffer, code_of_number_DFA);
 }
 
 LexicalAnalyzer&
@@ -102,9 +125,12 @@ LexicalAnalyzer::Split(
         switch (kind[c]) {
         case kCommon:
             do {
+                if (kind[c] != kCommon) {
+                    break;
+                }
                 ++column;
                 buffer.push_back(c);
-            } while (source_file->get(c) && kind[c] == kCommon);
+            } while (source_file->get(c));
             source_file->seekg(-1, std::fstream::cur);
             break;
         case kQuote:
@@ -247,7 +273,8 @@ LexicalAnalyzer::Match(const std::string& type, const std::string& unit) {
             return true;
         }
     } else if (type == "number") {
-        bool match = std::regex_match(unit, std::regex(number_pattern));
+        // bool match = std::regex_match(unit, std::regex(number_pattern));
+        bool match = number_machine.Judge(unit);
         if (match) {
             return true;
         }

@@ -25,6 +25,7 @@ private:
     std::string number_pattern;
     std::string id_pattern;
     DFA id_machine;
+    DFA number_machine;
 
     LexicalAnalyzer();
 

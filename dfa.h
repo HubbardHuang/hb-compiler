@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace hcc {
@@ -22,17 +23,17 @@ private:
         int weight;
     };
     int start_vertex;
-    int end_vertex;
+    std::unordered_map<int, bool> is_end_vertex;
     std::map<char, int> code_of;
     std::vector<std::vector<Road>> graph;
 
-    // int DecodeWeight(int);
     int Go(int, char);
+    bool AtEnd(int);
 
 public:
     ~DFA();
     DFA() = default;
-    DFA(const std::pair<int, int>&, const std::vector<XYZ>&,
+    DFA(const std::pair<int, const std::vector<int>&>&, const std::vector<XYZ>&,
         const std::map<char, int>&);
     bool Judge(const std::string&);
 };

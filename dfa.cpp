@@ -26,7 +26,7 @@ DFA::Go(int curr_vertex, char c) {
 
 DFA::~DFA() {}
 
-DFA::DFA(const std::pair<int, int>& start_and_end,
+DFA::DFA(const std::pair<int, const std::vector<int>&>& start_and_end,
          const std::vector<XYZ>& triad, const std::map<char, int>& bit_of) {
     code_of = bit_of;
 
@@ -65,7 +65,20 @@ DFA::DFA(const std::pair<int, int>& start_and_end,
     //     }
     // }
     start_vertex = start_and_end.first;
-    end_vertex = start_and_end.second;
+    // end_vertexes = start_and_end.second;
+    for (auto e : start_and_end.second) {
+        is_end_vertex.insert({ e, true });
+    }
+}
+
+bool
+DFA::AtEnd(int curr_vertex) {
+    auto temp = is_end_vertex.find(curr_vertex);
+    if (temp != is_end_vertex.end()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool
@@ -82,7 +95,11 @@ DFA::Judge(const std::string& unit) {
             return false;
         }
     }
-    return true;
+    if (AtEnd(curr_vertex)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 } // namespace hcc
