@@ -19,8 +19,8 @@ LexicalAnalyzer::LexicalAnalyzer()
 
     // Classify text characters with array [kind_]
     std::string space = " \t\r\n\v\f";
-    std::string single = "!%&()*+,-/:;<=>?[]^{}|~";
-    std::string common = "#.\\_0123456789";
+    std::string single = ".!%&()*+,-/:;<=>?[]^{}|~";
+    std::string common = "#\\_0123456789";
     for (char c = 'a'; c <= 'z'; c++) {
         common.push_back(c);
         common.push_back(c ^ (1 << 5));
@@ -42,7 +42,8 @@ LexicalAnalyzer::LexicalAnalyzer()
 
     // Set status number for keyword and symbol
     std::unique_ptr<std::ifstream, FileDeleter> file_of_keyword_and_symbol(
-      new std::ifstream("keyword_and_symbol.txt"), FileDeleter());
+      new std::ifstream("lexical_analyzer/keyword_and_symbol.txt"),
+      FileDeleter());
     std::string buffer;
     while (*file_of_keyword_and_symbol >> buffer) {
         keyword_and_symbol_.insert({ buffer, true });
@@ -57,43 +58,55 @@ LexicalAnalyzer::LexicalAnalyzer()
     }
 
     // Initialize id DFA
-    std::map<char, int> code_of_id_DFA;
-    code_of_id_DFA.insert({ '_', 1 << 0 });
+    std::map<char, int> id_dfa_code_of;
+
+    id_dfa_code_of.insert({ '_', 1 << 0 });
     for (char ch = 'a'; ch <= 'z'; ch++) {
-        code_of_id_DFA.insert({ ch, 1 << 0 });
-        code_of_id_DFA.insert({ toupper(ch), 1 << 0 });
+        id_dfa_code_of.insert({ ch, 1 << 0 });
+        id_dfa_code_of.insert({ toupper(ch), 1 << 0 });
     }
     for (char ch = '0'; ch <= '9'; ch++) {
-        code_of_id_DFA.insert({ ch, 1 << 1 });
+        id_dfa_code_of.insert({ ch, 1 << 1 });
     }
-    id_machine_ =
-      DFA({ 0, { 1 } }, { XYZ(0, 1, 1 << 0), XYZ(1, 1, (1 << 0) | (1 << 1)) },
-          code_of_id_DFA);
+    {
+        int start_vertex = 0;
+        std::vector<int> end_vertexes = { 1 };
+        std::vector<XYZ> xyz_buffer;
+        xyz_buffer.push_back(XYZ(0, 1, 1 << 0));
+        xyz_buffer.push_back(XYZ(1, 1, (1 << 0) | (1 << 1)));
+        id_machine_ =
+          DFA({ start_vertex, end_vertexes }, { xyz_buffer }, id_dfa_code_of);
+    }
 
     // Initialize number DFA
-    std::map<char, int> code_of_number_DFA;
-    code_of_number_DFA.insert({ '.', 1 << 0 });
-    code_of_number_DFA.insert({ 'E', 1 << 1 });
-    code_of_number_DFA.insert({ 'e', 1 << 1 });
-    code_of_number_DFA.insert({ '+', 1 << 2 });
-    code_of_number_DFA.insert({ '-', 1 << 3 });
+    std::map<char, int> number_dfa_code_of;
+    number_dfa_code_of.insert({ '.', 1 << 0 });
+    number_dfa_code_of.insert({ 'E', 1 << 1 });
+    number_dfa_code_of.insert({ 'e', 1 << 1 });
+    number_dfa_code_of.insert({ '+', 1 << 2 });
+    number_dfa_code_of.insert({ '-', 1 << 3 });
     for (char ch = '0'; ch <= '9'; ch++) {
-        code_of_number_DFA.insert({ ch, 1 << 4 });
+        number_dfa_code_of.insert({ ch, 1 << 4 });
     }
-    std::vector<XYZ> xyz_buffer;
-    xyz_buffer.push_back(XYZ(0, 1, 1 << 4));
-    xyz_buffer.push_back(XYZ(1, 1, 1 << 4));
-    xyz_buffer.push_back(XYZ(1, 2, 1 << 0));
-    xyz_buffer.push_back(XYZ(2, 4, 1 << 4));
-    xyz_buffer.push_back(XYZ(4, 4, 1 << 4));
-    xyz_buffer.push_back(XYZ(4, 3, 1 << 1));
-    xyz_buffer.push_back(XYZ(1, 3, 1 << 1));
-    xyz_buffer.push_back(XYZ(3, 6, 1 << 2));
-    xyz_buffer.push_back(XYZ(3, 6, 1 << 3));
-    xyz_buffer.push_back(XYZ(3, 5, 1 << 4));
-    xyz_buffer.push_back(XYZ(6, 5, 1 << 4));
-    xyz_buffer.push_back(XYZ(5, 5, 1 << 4));
-    number_machine_ = DFA({ 0, { 1, 4, 5 } }, xyz_buffer, code_of_number_DFA);
+    {
+        std::vector<XYZ> xyz_buffer;
+        xyz_buffer.push_back(XYZ(0, 1, 1 << 4));
+        xyz_buffer.push_back(XYZ(1, 1, 1 << 4));
+        xyz_buffer.push_back(XYZ(1, 2, 1 << 0));
+        xyz_buffer.push_back(XYZ(2, 4, 1 << 4));
+        xyz_buffer.push_back(XYZ(4, 4, 1 << 4));
+        xyz_buffer.push_back(XYZ(4, 3, 1 << 1));
+        xyz_buffer.push_back(XYZ(1, 3, 1 << 1));
+        xyz_buffer.push_back(XYZ(3, 6, (1 << 2) | (1 << 3)));
+        xyz_buffer.push_back(XYZ(3, 5, 1 << 4));
+        xyz_buffer.push_back(XYZ(6, 5, 1 << 4));
+        xyz_buffer.push_back(XYZ(5, 5, 1 << 4));
+
+        int start_vertex = 0;
+        std::vector<int> end_vertexes = { 1, 4, 5 };
+        number_machine_ =
+          DFA({ start_vertex, end_vertexes }, xyz_buffer, number_dfa_code_of);
+    }
 }
 
 LexicalAnalyzer&
@@ -119,6 +132,7 @@ LexicalAnalyzer::Split(
     char next;
     int i;
     int point_count;
+    bool reading_header = false;
     bool go_on_reading = true;
     size_t row = 1;
     size_t column = 0;
@@ -126,33 +140,54 @@ LexicalAnalyzer::Split(
     size_t special_row, special_column; // Used for "/*...*/"
     while (source_file->get(c)) {
         // Find a meaningful morpheme
+        if (!result.empty() && result.back().name == "#include") {
+            reading_header = true;
+        }
         switch (kind_[c]) {
         case kCommon:
             do {
                 if (kind_[c] != kCommon) {
-                    if (c == '+' ||
-                        c == '-') { // '-' can be in either "1E-3" or "p->age"
+                    if (c == '.') {
+                        go_on_reading = true;
+                        // '.' in "<filename.h>" must be read into the current
+                        // buffer
+                        if (!reading_header) {
+                            for (i = 0; i < buffer.size(); i++) {
+                                if (isdigit(buffer[i])) {
+                                    continue;
+                                } else {
+                                    go_on_reading = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!go_on_reading) {
+                            break; // Finish reading into the current buffer
+                        }
+                    } else if (c == '+' || c == '-') { // '-' can be in either
+                                                       // "1E-3" or "p->age"
                         point_count = 0;
                         go_on_reading = true;
                         for (i = 0; i < buffer.size(); i++) {
-                            if (buffer[i] == '.' && point_count == 0) {
+                            if (i == buffer.size() - 1 &&
+                                (buffer[i] == 'e' || buffer[i] == 'E')) {
+                                continue;
+                            } else if (buffer[i] == '.' && point_count == 0) {
                                 ++point_count;
                                 continue;
                             } else if (isdigit(buffer[i])) {
                                 continue;
                             } else {
-                                // --column;
-                                // source_file->seekg(-1, std::fstream::cur);
-                                // source_file->get(c);
                                 go_on_reading = false;
                                 break;
                             }
                         }
                         if (!go_on_reading) {
-                            break;
+                            break; // Finish reading into the current buffer
                         }
+
                     } else {
-                        break;
+                        break; // Finish reading into the current buffer
                     }
                 }
                 ++column;
@@ -208,7 +243,8 @@ LexicalAnalyzer::Split(
                     ++row;
                     prev_column = column;
                     column = 0;
-                } // Operator consisting of 3 characters, only "<<=" and ">>="
+                } // Operator consisting of 3 characters, only "<<=" and
+                  // ">>="
                 else if (combination == "<<" || combination == ">>") {
                     if (source_file->get(next)) {
                         if (next == '=') {
@@ -224,6 +260,9 @@ LexicalAnalyzer::Split(
                 else if (IsTwoCharacterOperator(combination)) {
                     buffer += combination;
                 } else { // Operator consisting of 1 characters
+                    if (c == '>') {
+                        reading_header = false;
+                    }
                     --column;
                     source_file->seekg(-1, std::fstream::cur);
                     buffer.push_back(c);
@@ -342,24 +381,6 @@ LexicalAnalyzer::Match(const std::string& type, const std::string& unit) {
     return match_or_not;
 }
 
-void
-LexicalAnalyzer::HandleMemberAccessing(std::list<Token>& source) {
-    for (auto t = source.begin(); t != source.end(); t++) {
-        if (t->type != "OTHER") {
-            continue;
-        }
-        auto found_pos = t->name.find('.');
-        if (found_pos != std::string::npos) {
-            std::string left = t->name.substr(0, found_pos);
-            std::string right = t->name.substr(found_pos + 1);
-            // if (isId(left)) {
-
-            //     source.insert(t, Token())
-            // }
-        }
-    }
-}
-
 std::list<Token>
 LexicalAnalyzer::Classify(std::list<Token>& source) {
     for (auto& i : source) {
@@ -376,7 +397,6 @@ LexicalAnalyzer::Classify(std::list<Token>& source) {
             }
         }
     }
-    // HandleMemberAccessing(source);
 
     return source;
 }

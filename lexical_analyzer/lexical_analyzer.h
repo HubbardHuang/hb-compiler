@@ -42,7 +42,6 @@ private:
     bool MatchCharacter(const std::string& unit);
     bool MatchString(const std::string& unit);
     bool Match(const std::string& type, const std::string& unit);
-    void HandleMemberAccessing(std::list<Token>& source);
 
     std::list<Token> Split(
       std::unique_ptr<std::fstream, FileDeleter>& source_file);
