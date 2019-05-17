@@ -13,11 +13,11 @@ DFA::Road::Road(int n, int w)
 
 int
 DFA::Go(int curr_vertex, char c) {
-    if (graph[curr_vertex].empty()) {
+    if (graph_[curr_vertex].empty()) {
         return -1;
     }
-    for (auto road : graph[curr_vertex]) {
-        if (road.weight & code_of[c]) {
+    for (auto road : graph_[curr_vertex]) {
+        if (road.weight & code_of_[c]) {
             return road.neighbor;
         }
     }
@@ -28,7 +28,7 @@ DFA::~DFA() {}
 
 DFA::DFA(const std::pair<int, const std::vector<int>&>& start_and_end,
          const std::vector<XYZ>& triad, const std::map<char, int>& bit_of) {
-    code_of = bit_of;
+    code_of_ = bit_of;
 
     int vertex_count = 0;
     for (auto t : triad) {
@@ -39,42 +39,20 @@ DFA::DFA(const std::pair<int, const std::vector<int>&>& start_and_end,
             vertex_count = t.end;
         }
     }
-    graph.resize(vertex_count + 1);
+    graph_.resize(vertex_count + 1);
     for (auto t : triad) {
-        graph[t.start].push_back(Road(t.end, t.weight));
+        graph_[t.start].push_back(Road(t.end, t.weight));
     }
-
-    // for (int i = 0; i < graph.size(); i++) {
-    //     if (graph[i].empty()) {
-    //         end_vertex = i;
-    //         break;
-    //     }
-    // }
-
-    // const int kTrue = 1;
-    // const int kFalse = 0;
-    // std::vector<int> be_neighbor(vertex_count, kFalse);
-    // for (auto g : graph) {
-    //     for (auto v : g) {
-    //         be_neighbor[v.neighbor] = kTrue;
-    //     }
-    // }
-    // for (int i = 0; i < be_neighbor.size(); i++) {
-    //     if (!be_neighbor[i]) {
-    //         start_vertex = i;
-    //     }
-    // }
-    start_vertex = start_and_end.first;
-    // end_vertexes = start_and_end.second;
+    start_vertex_ = start_and_end.first;
     for (auto e : start_and_end.second) {
-        is_end_vertex.insert({ e, true });
+        is_end_vertex_.insert({ e, true });
     }
 }
 
 bool
 DFA::AtEnd(int curr_vertex) {
-    auto temp = is_end_vertex.find(curr_vertex);
-    if (temp != is_end_vertex.end()) {
+    auto temp = is_end_vertex_.find(curr_vertex);
+    if (temp != is_end_vertex_.end()) {
         return true;
     } else {
         return false;
@@ -86,7 +64,7 @@ DFA::Judge(const std::string& unit) {
     if (unit.empty()) {
         return false;
     }
-    int curr_vertex = start_vertex;
+    int curr_vertex = start_vertex_;
     for (auto ch : unit) {
         int next_vertex;
         if ((next_vertex = Go(curr_vertex, ch)) != -1) {

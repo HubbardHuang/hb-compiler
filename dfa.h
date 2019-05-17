@@ -22,20 +22,20 @@ private:
         int neighbor;
         int weight;
     };
-    int start_vertex;
-    std::unordered_map<int, bool> is_end_vertex;
-    std::map<char, int> code_of;
-    std::vector<std::vector<Road>> graph;
+    int start_vertex_;
+    std::unordered_map<int, bool> is_end_vertex_;
+    std::map<char, int> code_of_;
+    std::vector<std::vector<Road>> graph_;
 
-    int Go(int, char);
-    bool AtEnd(int);
+    int Go(int curr_vertex, char c);
+    bool AtEnd(int curr_vertex);
 
 public:
     ~DFA();
     DFA() = default;
-    DFA(const std::pair<int, const std::vector<int>&>&, const std::vector<XYZ>&,
-        const std::map<char, int>&);
-    bool Judge(const std::string&);
+    DFA(const std::pair<int, const std::vector<int>&>& start_and_end,
+        const std::vector<XYZ>& triad, const std::map<char, int>& bit_of);
+    bool Judge(const std::string& unit);
 };
 
 } // namespace hcc
